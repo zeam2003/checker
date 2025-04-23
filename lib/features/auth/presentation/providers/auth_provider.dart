@@ -8,9 +8,11 @@ import 'package:formz/formz.dart';
 import '../../../shared/services/key_value_storage_service.dart';
 import '../providers/user_session_provider.dart';
 import '../../domain/models/user_session.dart';  // Corregida la ruta de importación
+import '../../../shared/providers/dio_provider.dart';
 
 
-final dioProvider = Provider((ref) => Dio());
+// Eliminar esta línea ya que ahora está en dio_provider.dart
+// final dioProvider = Provider((ref) => Dio());
 
 final authRepositoryProvider = Provider((ref) {
   final dio = ref.watch(dioProvider);
