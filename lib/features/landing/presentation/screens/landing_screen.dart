@@ -32,8 +32,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
       vsync: this,
     )..repeat();
 
-    // Este delay podría ser innecesario
-    Future.delayed(const Duration(seconds: 3), () {
+    // Reducimos el tiempo de delay para una transición más suave
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -213,15 +213,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                   ),
                   const SizedBox(height: 40),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const CheckScreen(
-                            checkType: 'complete',
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => context.push('/check/complete'),
                     icon: const Icon(Icons.build_circle_outlined),
                     label: const Text('Revisión Completa'),
                     style: ElevatedButton.styleFrom(
@@ -239,15 +231,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const CheckScreen(
-                            checkType: 'refurbished',
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => context.push('/check/refurbished'),
                     icon: const Icon(Icons.settings_backup_restore),
                     label: const Text('Revisión y Refurbished'),
                     style: ElevatedButton.styleFrom(

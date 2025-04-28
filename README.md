@@ -1,63 +1,80 @@
 # Checker App
 
-A Flutter application for diagnostic and verification management.
+Una aplicación Flutter para gestión y verificación de diagnósticos.
 
-## 🎯 Project Overview
+## 🎯 Descripción General del Proyecto
 
-Checker is a professional diagnostic tool designed to streamline the process of device verification and status tracking. It provides an intuitive interface for managing and monitoring various diagnostic aspects of devices.
+Checker es una herramienta profesional de diagnóstico diseñada para optimizar el proceso de verificación y seguimiento del estado de dispositivos. Proporciona una interfaz intuitiva para gestionar y monitorear varios aspectos diagnósticos de los dispositivos.
 
-## 🏆 Milestone 1: Core UI & Basic Functionality
+## 🏆 Milestone 1: UI Core & Funcionalidad Básica
+### Características Completadas
+- **Componente Header**
+  - Barra de navegación profesional con logo
+  - Sistema de notificaciones de usuario
+  - Punto de acceso al perfil
 
-### Completed Features
-- **Header Component**
-  - Professional navigation bar with logo
-  - User notifications system
-  - Profile access point
+- **Panel de Información**
+  - Seguimiento de fecha de creación
+  - Contador de chequeos
+  - Gestión de tickets
+  - Visualización de información del usuario
 
-- **Info Dashboard**
-  - Creation date tracking
-  - Check counter
-  - Ticket management
-  - User information display
+- **Rastreador de Progreso Interactivo**
+  - Progresión visual por pasos
+  - Indicadores de estado (Bueno, Regular, Malo)
+  - Actualizaciones en tiempo real
+  - Retroalimentación con códigos de color
 
-- **Interactive Progress Tracker**
-  - Visual step progression
-  - Status indicators (Good, Regular, Bad)
-  - Real-time status updates
-  - Dynamic color-coded feedback
+- **Tarjetas de Diagnóstico**
+  - Diagnósticos específicos por componente
+  - Sistema de selección de estado
+  - Campo de observaciones
+  - Capacidad de modificación de estado
 
-- **Diagnostic Cards**
-  - Component-specific diagnostics
-  - Status selection system
-  - Observation input field
-  - Status modification capability
+## 🏆 Milestone 2: Autenticación y Persistencia
+### Características Implementadas
+- **Sistema de Autenticación**
+  - Login con persistencia de sesión
+  - Manejo de tokens JWT
+  - Protección de rutas
+  - Cierre de sesión seguro
 
-### Technical Highlights
-- Implemented using Flutter & Riverpod
-- Responsive design principles
-- State management with providers
-- Interactive UI components
-- Real-time status updates
+- **Gestión de Estado**
+  - Implementación de Riverpod
+  - Estado global de la aplicación
+  - Manejo asíncrono de datos
+  - Persistencia con SharedPreferences
 
-## 🛠 Tech Stack
+- **Navegación Segura**
+  - Implementación de go_router
+  - Redirecciones basadas en autenticación
+  - Manejo de rutas protegidas
+  - Breadcrumbs para navegación
+
+## 🛠 Stack Tecnológico
 - Flutter
-- Riverpod (State Management)
+- Riverpod (Gestión de Estado)
+- go_router (Navegación)
+- SharedPreferences (Almacenamiento Local)
 - Google Fonts
 - Font Awesome Icons
+- Dio (Cliente HTTP)
 
-## 📱 Current Features
-- Device diagnostic tracking
-- Status management system
-- Progress visualization
-- Interactive diagnostic cards
-- Real-time updates
+## 📱 Características Actuales
+- Seguimiento de diagnósticos de dispositivos
+- Sistema de gestión de estados
+- Visualización de progreso
+- Tarjetas de diagnóstico interactivas
+- Actualizaciones en tiempo real
+- Persistencia de sesión de usuario
+- Protección de rutas basada en autenticación
 
-## 🔜 Next Steps
-- Implement data persistence
-- Add user authentication
-- Create detailed reporting system
-- Develop history tracking
-- Add export functionality
+## 🔜 Próximos Pasos
+- Implementar sincronización offline
+- Añadir sistema de reportes detallados
+- Desarrollar seguimiento histórico
+- Agregar funcionalidad de exportación
+- Implementar notificaciones push
 
-## 📝 Notes
-This milestone establishes the core UI and basic functionality of the application, setting a strong foundation for future development phases.
+## 📝 Notas
+Este proyecto establece una base sólida con autenticación robusta y persistencia de datos, preparando el camino para futuras fases de desarrollo con características más avanzadas.

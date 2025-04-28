@@ -2,14 +2,37 @@ import 'package:checker/features/tickets/presentation/screens/ticket_selection_s
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/providers/user_session_provider.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/landing/presentation/screens/landing_screen.dart';
 import '../../features/checks/presentation/screens/check_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final userSessionState = ref.watch(userSessionProvider);
+
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/',
+    redirect: (context, state) {
+      final isLoggedIn = userSessionState != null;
+      final isGoingToLogin = state.matchedLocation == '/login';
+
+      // Si no está autenticado y no va al login, redirigir al login
+      if (!isLoggedIn && !isGoingToLogin) {
+        return '/login';
+      }
+
+      // Si está autenticado y va al login, redirigir a home
+      if (isLoggedIn && isGoingToLogin) {
+        return '/';
+      }
+
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const LandingScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),

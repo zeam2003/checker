@@ -85,40 +85,26 @@ class LoginFormNotifier extends StateNotifier<LoginState> {
   }
 
   Future<void> onSubmit(BuildContext context) async {
-    if (!state.isValid || state.isLoading) return;
-
     try {
-      state = state.copyWith(
-        isLoading: true,
-        errorMessage: null,
-      );
+      state = state.copyWith(isLoading: true, errorMessage: null);
       
-      final response = await repository.login(
-        state.username,
-        state.password,
-      );
+      final loginResponse = await repository.login(state.username, state.password);
       
-      print('Login Response: $response');
+      if (!context.mounted) return;
       
-      if (response != null) {
-        if (response['session_token'] != null) {
-          await keyValueStorage.setKeyValue('token', response['session_token']);
-        }
-        
-        final userSession = UserSession.fromJson(response);
-        ref.read(userSessionProvider.notifier).login(userSession);  // Cambiado de setUserSession a login
-        
-        if (context.mounted) {
-          context.go('/landing');
-        }
-      }
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Crear la sesión del usuario y guardarla (esto ya maneja la persistencia internamente)
+      final userSession = UserSession.fromJson(loginResponse);
+      ref.read(userSessionProvider.notifier).login(userSession);
+      
+      context.go('/');
       
     } catch (e) {
       state = state.copyWith(
+        isLoading: false,
         errorMessage: e.toString(),
       );
-    } finally {
-      state = state.copyWith(isLoading: false);
     }
   }
 }
