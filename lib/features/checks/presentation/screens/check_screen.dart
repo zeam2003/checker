@@ -1,4 +1,7 @@
+import 'package:checker/features/auth/presentation/providers/user_session_provider.dart';
 import 'package:checker/features/checks/domain/models/ticket_model.dart';
+import 'package:checker/features/checks/presentation/providers/check_provider.dart';
+import 'package:checker/features/checks/presentation/widgets/check_header.dart';
 import 'package:checker/features/landing/presentation/widgets/landing_header.dart';
 import 'package:checker/features/shared/widgets/custom_breadcrumb.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/ticket_provider.dart';
+
 
 class CheckScreen extends ConsumerStatefulWidget {
   final String checkType;
@@ -22,6 +26,8 @@ class CheckScreen extends ConsumerStatefulWidget {
 class CheckScreenState extends ConsumerState<CheckScreen> {
   final _ticketController = TextEditingController();
   bool _showResults = false;
+  bool _showTicketInput = false;
+  bool _showNewTicketForm = false;  // Initialize the variable here
 
   String get screenTitle {
     switch (widget.checkType) {
@@ -142,99 +148,155 @@ class CheckScreenState extends ConsumerState<CheckScreen> {
   Widget _buildTicketData(Map<String, dynamic> ticketData) {
     final ticket = TicketModel.fromJson(ticketData);
     final isClosed = ticket.status == 5 || ticket.status == 6;
+    final checkState = ref.watch(checkProvider);
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,  // Cambiado a center
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        if (isClosed) ...[
+          Row(
             children: [
-              if (isClosed) ...[
-                Row(
-                  children: [
-                    Icon(Icons.warning_amber_rounded, 
-                      color: Colors.orange.shade700, 
-                      size: 24
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'El ticket está cerrado',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.orange.shade700,
-                      ),
-                    ),
-                  ],
+              Icon(Icons.warning_amber_rounded, 
+                color: Colors.orange.shade700, 
+                size: 24
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'El ticket está cerrado',
+                style: GoogleFonts.montserrat(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.orange.shade700,
                 ),
-              ] else ...[
-                Text(
-                  'Información del Ticket',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              _buildInfoRow('Ticket:', '#${ticket.id}'),
-              _buildInfoRow('Título:', ticket.name),
-              _buildInfoRow('Creado:', ticket.date),
-              _buildInfoRow('Usuario:', ticket.userRecipient),
+              ),
             ],
           ),
-        ),
-        Column(
-          children: [
-            if (isClosed)
-              ElevatedButton.icon(
-                onPressed: _handleRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade50,
-                  foregroundColor: Colors.orange.shade700,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                ),
-              )
-            else ...[
-              ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implementar lógica de confirmación
+        ] else ...[
+          Text(
+            'Información del Ticket',
+            style: GoogleFonts.montserrat(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        _buildInfoRow('Ticket:', '#${ticket.id}'),
+        _buildInfoRow('Título:', ticket.name),
+        _buildInfoRow('Creado:', ticket.date),
+        _buildInfoRow('Usuario:', ticket.userRecipient),
+        if (!isClosed) ...[
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: checkState.isLoading 
+              ? null 
+              : () {
+                  final ticketState = ref.read(ticketProvider);
+                  final userSession = ref.read(userSessionProvider);
+                  
+                  if (userSession == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Error: Usuario no autenticado'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (ticketState.deviceType == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Error: Tipo de dispositivo no determinado'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  ref.read(checkProvider.notifier).createCheck(
+                    ticket.id.toString(),
+                    type: ticketState.deviceType!,
+                    glpiID: userSession.userId,
+                    createdBy: userSession.userId,
+                  );
                 },
-                icon: const Icon(Icons.check_circle),
-                label: const Text('Confirmar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
+            icon: checkState.isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
                   ),
-                ),
+                )
+              : const Icon(Icons.play_arrow),
+            label: Text(
+              checkState.isLoading ? 'Creando check...' : 'Iniciar Chequeo'
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7C4DFF),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
               ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _handleRetry,
-                icon: const Icon(Icons.change_circle_outlined),
-                label: const Text('Cambiar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade50,  // Cambiado a naranja claro
-                  foregroundColor: Colors.orange.shade700, // Cambiado a naranja oscuro
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          if (checkState.errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      checkState.errorMessage!,
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ],
-        ),
+          if (checkState.checkData != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Colors.green.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Check creado exitosamente',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ],
     );
   }
@@ -267,6 +329,192 @@ class CheckScreenState extends ConsumerState<CheckScreen> {
     );
   }
 
+  Widget _buildTicketCard(TicketState ticketState) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!_showNewTicketForm) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '¿Tienes un número de ticket?',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      if (_showTicketInput) {
+                        setState(() {
+                          _showTicketInput = false;
+                          _showResults = false;
+                          _ticketController.clear();
+                        });
+                      } else {
+                        context.go('/');
+                      }
+                    },
+                    icon: const Icon(Icons.close),
+                    color: Colors.grey[600],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (!_showTicketInput)
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _showTicketInput = true;
+                            });
+                          },
+                          icon: const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.black87,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFB7E4C7), // Verde pastel más suave
+                            elevation: 2,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          label: const Text(
+                            'Sí, tengo un ticket',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          context.go('/checks/${widget.checkType}/new');
+                        },
+                        icon: const Icon(
+                          Icons.add_circle_outline,
+                          color: Color(0xFF5C6BC0),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          elevation: 2,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: const BorderSide(
+                              color: Color(0xFF5C6BC0),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        label: const Text(
+                          'No, creemos uno',
+                          style: TextStyle(
+                            color: Color(0xFF5C6BC0),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _ticketController,
+                            enabled: !ticketState.isLoading && !_showResults,
+                            onFieldSubmitted: (!ticketState.isLoading && !_showResults)
+                              ? (_) => _handleValidation()
+                              : null,
+                            decoration: InputDecoration(
+                              hintText: 'Ingrese el número de ticket',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              prefixIcon: const Icon(Icons.confirmation_number_outlined),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          onPressed: (!ticketState.isLoading && !_showResults) 
+                            ? _handleValidation 
+                            : null,
+                          icon: ticketState.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.white,
+                              ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF7C4DFF),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          label: Text(
+                            ticketState.isLoading ? 'Validando...' : 'Validar',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildTicketResults(ticketState),
+                  ],
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+  }
+
   @override
   Widget build(BuildContext context) {
     final ticketState = ref.watch(ticketProvider);
@@ -283,134 +531,13 @@ class CheckScreenState extends ConsumerState<CheckScreen> {
             child: SingleChildScrollView(
               child: Center(
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 800), // Cambiado de 1200 a 800
+                  constraints: const BoxConstraints(maxWidth: 800),
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.symmetric(vertical: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.checklist_rounded,
-                                  size: 32,
-                                  color: Colors.blue.shade700,
-                                ),
-                                const SizedBox(width: 16),
-                                Text(
-                                  screenTitle,
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 48),
-                              child: Text(
-                                'Luego de este paso tu progreso quedará guardado automáticamente',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '¿Tienes un número de ticket?',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _ticketController,
-                                      enabled: !ticketState.isLoading && !_showResults,
-                                      onFieldSubmitted: (!ticketState.isLoading && !_showResults)
-                                        ? (_) => _handleValidation()
-                                        : null,
-                                      decoration: InputDecoration(
-                                        hintText: 'Ingrese el número de ticket',
-                                        filled: true,
-                                        fillColor: Colors.grey[100],
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                        prefixIcon: const Icon(Icons.confirmation_number_outlined),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  ElevatedButton.icon(
-                                    onPressed: (!ticketState.isLoading && !_showResults) 
-                                      ? _handleValidation 
-                                      : null,
-                                    icon: ticketState.isLoading
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.check_circle_outline,
-                                          color: Colors.white,
-                                        ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF7C4DFF),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    label: Text(
-                                      ticketState.isLoading ? 'Validando...' : 'Validar',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              _buildTicketResults(ticketState),
-                            ],
-                          ),
-                        ),
-                      ),
-                      
+                      CheckHeader(title: screenTitle),
+                      _buildTicketCard(ticketState),
                       const SizedBox(height: 20),
                     ],
                   ),

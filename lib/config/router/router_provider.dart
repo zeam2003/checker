@@ -1,3 +1,4 @@
+import 'package:checker/features/checks/presentation/screens/new_ticket_screen.dart';
 import 'package:checker/features/tickets/presentation/screens/ticket_selection_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -50,6 +51,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final checkType = state.pathParameters['type'] ?? 'complete';
           return CheckScreen(checkType: checkType);
+        },
+      ),
+      // Eliminar la ruta duplicada y agregar la ruta correcta para 'complete/new'
+      GoRoute(
+        path: '/checks/complete/new',
+        builder: (context, state) {
+          return const NewTicketScreen(checkType: 'complete');
+        },
+      ),
+      GoRoute(
+        path: '/check/:type/new',
+        builder: (context, state) {
+          final checkType = state.pathParameters['type'] ?? 'complete';
+          return NewTicketScreen(checkType: checkType);
         },
       ),
     ],
