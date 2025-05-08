@@ -3,6 +3,7 @@ import 'package:checker/features/checks/domain/models/ticket_model.dart';
 import 'package:checker/features/checks/domain/repositories/check_repository.dart';
 import 'package:checker/features/checks/domain/repositories/ticket_repository.dart';
 import 'package:checker/features/checks/presentation/providers/check_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/providers/dio_provider.dart';
@@ -141,12 +142,16 @@ class TicketNotifier extends StateNotifier<TicketState> {
       debugPrint('==========================================');
       debugPrint('ERROR AL CREAR CHECK');
       debugPrint('==========================================');
-      debugPrint('Error: ${e.toString()}');
-      debugPrint('==========================================');
       
-      state = state.copyWith(
-        errorMessage: e.toString(),
-      );
+      if (e is DioException && e.response?.statusCode == 409) {
+        state = state.copyWith(
+          errorMessage: e.error.toString(),
+        );
+      } else {
+        state = state.copyWith(
+          errorMessage: 'Error al crear el check: ${e.toString()}',
+        );
+      }
     }
   }
 }

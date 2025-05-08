@@ -64,6 +64,10 @@ class CheckNotifier extends StateNotifier<CheckState> {
       );
     }
   }
+
+  void clearState() {
+    state = CheckState();
+  }
 }
 
 final checkRepositoryProvider = Provider((ref) {
